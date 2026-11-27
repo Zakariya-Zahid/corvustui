@@ -492,7 +492,9 @@ ruff check src/
 mypy src/
 ```
 
-See [PUBLISHING.md](PUBLISHING.md) for the PyPI release checklist.
+See [PUBLISHING.md](PUBLISHING.md) for the PyPI release checklist, and
+[CONTRIBUTING.md](CONTRIBUTING.md) for setup, the architecture map, and the
+quality gates.
 
 ## Roadmap (FYP Phases)
 
@@ -515,6 +517,16 @@ See [PUBLISHING.md](PUBLISHING.md) for the PyPI release checklist.
     embedding model is downloaded on first use.
 
 See [PHASE_REPORT.md](PHASE_REPORT.md) for the evidence and remaining gaps.
+
+### Next: v0.2 → v1.0
+
+The post-0.1 plan covers persistent sessions, multimodal input (images,
+documents, audio/video transcripts), skills, memory, portability, plugins, and
+the path to a stable v1.0. It includes owners, estimates, dependencies,
+acceptance criteria, and a realistic part-time timeline.
+
+See [ROADMAP.md](ROADMAP.md) for the phased plan and
+[CONTRIBUTING.md](CONTRIBUTING.md) for how to pick up an epic.
 
 ## License
 
