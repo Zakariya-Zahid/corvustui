@@ -117,6 +117,9 @@ Run these before every PR. They are the same gates used for releases.
 # Tests
 python -m pytest -q
 
+# Cross-module smoke tests (also run in the CI integration job)
+python -m pytest -q -m integration
+
 # Focused tests while developing
 python -m pytest tests/test_agent.py -q
 python -m pytest -q -k "ollama and tool"
@@ -133,6 +136,21 @@ python -m compileall -q src
 uv build
 uvx twine check dist/*
 ```
+
+### CI on GitHub
+
+Every PR runs `.github/workflows/ci.yml`:
+
+| Check | What it proves |
+|-------|----------------|
+| `lint` | Ruff `F,E9,I001` and bytecode compilation |
+| `test (3.11)` | Unit tests on Python 3.11 |
+| `test (3.14)` | Unit tests on Python 3.14 |
+| `integration` | Cross-module smoke tests in `tests/integration/` |
+| `build` | Wheel/sdist build, `twine check`, clean install, `corvustui --help` |
+
+The CI does not run Bend; the compiler is not committed. Run it locally when
+you have `bend/`.
 
 ### Bend proofs
 

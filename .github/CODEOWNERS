@@ -1,0 +1,10 @@
+# Default owner for repository plumbing and security-sensitive paths.
+/.github/            @Zakariya-Zahid
+/pyproject.toml      @Zakariya-Zahid
+/LICENSE             @Zakariya-Zahid
+/src/corvustui/safety/ @Zakariya-Zahid
+
+# Add your teammates' GitHub handles for the areas they own, for example:
+# /src/corvustui/providers/ @teammate-provider
+# /src/corvustui/tui/       @teammate-tui
+# /src/corvustui/mcp/       @teammate-mcp
