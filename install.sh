@@ -7,8 +7,8 @@
 # Local checkout:
 #   ./install.sh
 #
-# From GitHub (after replacing OWNER):
-#   curl -fsSL https://raw.githubusercontent.com/OWNER/corvustui/main/install.sh | bash
+# From GitHub:
+#   curl -fsSL https://raw.githubusercontent.com/Zakariya-Zahid/corvustui/main/install.sh | bash
 #
 # Optional environment variables:
 #   CORVUS_EXTRAS=tui        # default: all (tui,rag,web)
@@ -18,7 +18,7 @@
 
 set -euo pipefail
 
-REPO_URL="${CORVUS_REPO_URL:-git+https://github.com/OWNER/corvustui.git}"
+REPO_URL="${CORVUS_REPO_URL:-git+https://github.com/Zakariya-Zahid/corvustui.git}"
 EXTRAS="${CORVUS_EXTRAS:-all}"
 VERSION="${CORVUS_VERSION:-}"
 
@@ -53,9 +53,6 @@ if [[ "$SOURCE" == "." || "$SOURCE" == ./* || "$SOURCE" == /* ]]; then
     SOURCE_DIR="$(cd "$SOURCE" && pwd)"
     SPEC="corvustui[$EXTRAS] @ file://$SOURCE_DIR"
 else
-    if [[ "$SOURCE" == *"/OWNER/"* && -z "${CORVUS_ALLOW_PLACEHOLDER:-}" ]]; then
-        die "Set CORVUS_REPO_URL to your repository, e.g. CORVUS_REPO_URL=git+https://github.com/you/corvustui.git"
-    fi
     if [[ -n "$VERSION" ]]; then
         SOURCE="${SOURCE}@${VERSION}"
     fi

@@ -51,19 +51,26 @@ CorvusTUI ships as a Python package with optional extras:
 
 ```bash
 # All extras
-uv tool install "corvustui[all] @ git+https://github.com/OWNER/corvustui.git"
+uv tool install "corvustui[all] @ git+https://github.com/Zakariya-Zahid/corvustui.git"
 
 # TUI only (lighter)
-uv tool install "corvustui[tui] @ git+https://github.com/OWNER/corvustui.git"
+uv tool install "corvustui[tui] @ git+https://github.com/Zakariya-Zahid/corvustui.git"
+```
+
+#### From PyPI (once the first release is published)
+
+```bash
+uv tool install "corvustui[all]"
+pipx install "corvustui[all]"
 ```
 
 #### curl installer
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/corvustui/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Zakariya-Zahid/corvustui/main/install.sh | bash
 
 # TUI only
-curl -fsSL https://raw.githubusercontent.com/OWNER/corvustui/main/install.sh | CORVUS_EXTRAS=tui bash
+curl -fsSL https://raw.githubusercontent.com/Zakariya-Zahid/corvustui/main/install.sh | CORVUS_EXTRAS=tui bash
 ```
 
 The installer prefers `uv tool install`, then `pipx`, then `pip --user`.
@@ -71,14 +78,14 @@ The installer prefers `uv tool install`, then `pipx`, then `pip --user`.
 #### pipx or pip
 
 ```bash
-pipx install "corvustui[all] @ git+https://github.com/OWNER/corvustui.git"
-pip install --user "corvustui[all] @ git+https://github.com/OWNER/corvustui.git"
+pipx install "corvustui[all] @ git+https://github.com/Zakariya-Zahid/corvustui.git"
+pip install --user "corvustui[all] @ git+https://github.com/Zakariya-Zahid/corvustui.git"
 ```
 
 #### Development checkout
 
 ```bash
-git clone https://github.com/OWNER/corvustui.git
+git clone https://github.com/Zakariya-Zahid/corvustui.git
 cd corvustui
 ./install.sh                    # local, all extras
 # or
@@ -87,13 +94,12 @@ uv tool install --editable ".[all]"
 pip install -e ".[all]"
 ```
 
-Replace `OWNER` with your GitHub username. The `all` extra includes ChromaDB;
-its embedding model downloads on first use.
+The `all` extra includes ChromaDB; its embedding model downloads on first use.
 
 Upgrade or remove a uv install:
 
 ```bash
-uv tool install --force "corvustui[all] @ git+https://github.com/OWNER/corvustui.git"
+uv tool install --force "corvustui[all] @ git+https://github.com/Zakariya-Zahid/corvustui.git"
 uv tool uninstall corvustui
 ```
 
@@ -624,5 +630,9 @@ python -m compileall -q src tests
 
 The Bend compiler is not committed. When `bend/bin/bend` is missing, the two
 proof tests skip automatically and the rest of the suite still runs.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
 
 Happy agenting! 🦫

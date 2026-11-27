@@ -3,7 +3,24 @@ name = "corvustui"
 version = "0.1.0"
 description = "CorvusTUI: Agentic Terminal Interface and Modular MCP Execution Engine"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
+authors = [{ name = "Zakariya Zahid" }]
+keywords = ["llm", "agent", "tui", "terminal", "mcp", "ollama", "rag"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: User Interfaces",
+]
 dependencies = [
     "pydantic>=2.8",
     "pydantic-settings>=2.3",
@@ -42,7 +59,7 @@ web = [
 all = ["corvustui[rag,tui,web]"]
 
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -53,6 +70,11 @@ where = ["src"]
 
 [project.scripts]
 corvustui = "corvustui.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/Zakariya-Zahid/corvustui"
+Repository = "https://github.com/Zakariya-Zahid/corvustui"
+Issues = "https://github.com/Zakariya-Zahid/corvustui/issues"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -46,19 +46,27 @@ Rich/Click CLI and an interactive Textual TUI.
 
 ```bash
 # All extras: TUI + RAG + web search
-uv tool install "corvustui[all] @ git+https://github.com/OWNER/corvustui.git"
+uv tool install "corvustui[all] @ git+https://github.com/Zakariya-Zahid/corvustui.git"
 
 # Smaller TUI-only install
-uv tool install "corvustui[tui] @ git+https://github.com/OWNER/corvustui.git"
+uv tool install "corvustui[tui] @ git+https://github.com/Zakariya-Zahid/corvustui.git"
+```
+
+#### From PyPI (once the first release is published)
+
+```bash
+uv tool install "corvustui[all]"
+# or
+pipx install "corvustui[all]"
 ```
 
 #### curl installer
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/corvustui/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Zakariya-Zahid/corvustui/main/install.sh | bash
 
 # TUI only
-curl -fsSL https://raw.githubusercontent.com/OWNER/corvustui/main/install.sh | CORVUS_EXTRAS=tui bash
+curl -fsSL https://raw.githubusercontent.com/Zakariya-Zahid/corvustui/main/install.sh | CORVUS_EXTRAS=tui bash
 ```
 
 The installer prefers `uv tool install`, then `pipx`, then `pip --user`.
@@ -66,14 +74,14 @@ The installer prefers `uv tool install`, then `pipx`, then `pip --user`.
 #### pipx or pip
 
 ```bash
-pipx install "corvustui[all] @ git+https://github.com/OWNER/corvustui.git"
-pip install --user "corvustui[all] @ git+https://github.com/OWNER/corvustui.git"
+pipx install "corvustui[all] @ git+https://github.com/Zakariya-Zahid/corvustui.git"
+pip install --user "corvustui[all] @ git+https://github.com/Zakariya-Zahid/corvustui.git"
 ```
 
 #### From a local checkout (development)
 
 ```bash
-git clone https://github.com/OWNER/corvustui.git
+git clone https://github.com/Zakariya-Zahid/corvustui.git
 cd corvustui
 ./install.sh                    # local, all extras
 # or
@@ -82,7 +90,6 @@ uv tool install --editable ".[all]"
 pip install -e ".[all]"
 ```
 
-> Replace `OWNER` with your GitHub username after creating the repository.
 > The `all` extra pulls ChromaDB; its embedding model downloads on first use.
 > Use `tui` for a lighter install. The curl installer needs the repository to
 > be public (or a token for private repositories).
@@ -91,7 +98,7 @@ pip install -e ".[all]"
 
 ```bash
 # Re-run the install with --force to upgrade a git install
-uv tool install --force "corvustui[all] @ git+https://github.com/OWNER/corvustui.git"
+uv tool install --force "corvustui[all] @ git+https://github.com/Zakariya-Zahid/corvustui.git"
 
 # Remove it
 uv tool uninstall corvustui
@@ -485,6 +492,8 @@ ruff check src/
 mypy src/
 ```
 
+See [PUBLISHING.md](PUBLISHING.md) for the PyPI release checklist.
+
 ## Roadmap (FYP Phases)
 
 - [x] **Phase 1**: Provider abstraction + ReAct loop (Module 1)
@@ -509,7 +518,7 @@ See [PHASE_REPORT.md](PHASE_REPORT.md) for the evidence and remaining gaps.
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
