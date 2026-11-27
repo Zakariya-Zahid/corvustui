@@ -1,0 +1,40 @@
+{
+  "provider": "ollama",
+  "model": "qwen3.5:0.8b",
+  "started_at": "2026-11-26T13:20:44.980782+00:00",
+  "finished_at": "2026-11-26T13:21:20.302968+00:00",
+  "summary": {
+    "total": 2,
+    "passed": 1,
+    "failed": 1,
+    "errors": 0,
+    "average_latency_ms": 17591.02,
+    "total_tokens": 2610
+  },
+  "results": [
+    {
+      "task_id": "arithmetic",
+      "prompt": "What is 17 * 23? Reply with only the number.",
+      "status": "complete",
+      "answer": "The answer is 391",
+      "score": 0.0,
+      "passed": false,
+      "latency_ms": 16945.17,
+      "iterations": 1,
+      "total_tokens": 1313,
+      "error": null
+    },
+    {
+      "task_id": "instruction-following",
+      "prompt": "Reply with exactly the word corvus and nothing else.",
+      "status": "complete",
+      "answer": "corvus",
+      "score": 1.0,
+      "passed": true,
+      "latency_ms": 18236.86,
+      "iterations": 1,
+      "total_tokens": 1297,
+      "error": null
+    }
+  ]
+}

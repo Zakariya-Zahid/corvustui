@@ -1,0 +1,506 @@
+/* CorvusTUI Modern Compact Stylesheet (Claude Code & OpenCode inspired) */
+
+Screen {
+    layout: vertical;
+    background: #14151b;
+    color: #e4e6f0;
+}
+
+/* Sleek 1-line Top Header */
+#top-bar {
+    height: 1;
+    width: 100%;
+    background: #1a1b24;
+    color: #e4e6f0;
+    padding: 0 2;
+}
+
+/* Middle Workspace Split (takes all remaining vertical height) */
+#workspace {
+    height: 1fr;
+    width: 100%;
+    layout: horizontal;
+}
+
+/* Scrollable Conversation Canvas */
+#chat-view {
+    width: 1fr;
+    height: 1fr;
+    background: #14151b;
+    padding: 0;
+    overflow-y: auto;
+    scrollbar-size: 1 2;
+    scrollbar-gutter: stable;
+    scrollbar-color: #6b7085;
+    scrollbar-color-hover: #fab283;
+    scrollbar-color-active: #fab283;
+    scrollbar-background: #1c1e28;
+}
+
+/* Compact Right Workspace Sidebar */
+#sidebar {
+    width: 26;
+    height: 1fr;
+    background: #181922;
+    border-left: solid #262836;
+    padding: 0 1;
+    overflow-y: auto;
+    scrollbar-size: 1 1;
+    scrollbar-color: #3a3e54;
+    scrollbar-color-hover: #fab283;
+    scrollbar-background: #181922;
+}
+
+#sidebar.hidden {
+    display: none;
+}
+
+.sidebar-section-title {
+    color: #fab283;
+    text-style: bold;
+    margin-top: 1;
+}
+
+.sidebar-item {
+    color: #8c91a4;
+    padding-left: 1;
+}
+
+/* Compact Modern Message Layout */
+MessageBlock {
+    height: auto;
+    margin: 0 2 1 2;
+    padding: 0 1;
+    background: #14151b;
+}
+
+MessageBlock.role-user {
+    border-left: thick #5c9cf5;
+    background: #1d202c;
+    padding: 0 1;
+    margin: 0 2 1 2;
+}
+
+MessageBlock.role-assistant {
+    border-left: solid #323548;
+    background: #14151b;
+    padding: 0 1;
+    margin: 0 2 1 2;
+}
+
+MessageBlock.role-system {
+    border-left: solid #2c2f40;
+    color: #7c8196;
+    background: #14151b;
+    padding: 0 1;
+    margin: 0 2 0 2;
+}
+
+MessageBlock.role-error {
+    border-left: thick #f7768e;
+    background: #24171d;
+    padding: 0 1;
+    margin: 0 2 1 2;
+}
+
+.msg-header {
+    height: 1;
+    layout: horizontal;
+    margin-bottom: 0;
+}
+
+.msg-sender {
+    width: 1fr;
+    text-style: bold;
+}
+
+.msg-sender-user {
+    color: #7dcfff;
+}
+
+.msg-sender-assistant {
+    color: #fab283;
+}
+
+.msg-sender-system {
+    color: #7c8196;
+}
+
+.msg-sender-error {
+    color: #f7768e;
+}
+
+.msg-timestamp {
+    width: auto;
+    color: #4f5368;
+}
+
+.msg-body {
+    height: auto;
+}
+
+.msg-markdown {
+    height: auto;
+    margin: 0;
+    padding: 0;
+}
+
+.msg-footer {
+    height: 1;
+    color: #565a6e;
+    margin-top: 0;
+}
+
+/* Compact Collapsible Thinking Accordion */
+ThinkingBlock {
+    height: auto;
+    margin: 0;
+    padding: 0 1;
+    background: #181a24;
+    border-left: solid #45495e;
+}
+
+ThinkingBlock.streaming {
+    border-left: solid #e0af68;
+}
+
+.thinking-header {
+    height: 1;
+    color: #7c8196;
+    text-style: italic;
+}
+
+.thinking-header:hover {
+    color: #c8ccd9;
+    background: #222432;
+}
+
+.thinking-content {
+    display: none;
+    color: #7c8196;
+    text-style: italic;
+    padding: 0 1 0 1;
+    height: auto;
+}
+
+ThinkingBlock.expanded .thinking-content {
+    display: block;
+}
+
+/* Compact 3-State Tool Call Cards */
+ToolBlock {
+    height: auto;
+    margin: 0;
+    padding: 0 1;
+    background: #1a1c26;
+    border-left: solid #565a6e;
+}
+
+ToolBlock.state-running {
+    border-left: thick #e0af68;
+}
+
+ToolBlock.state-success {
+    border-left: solid #7fd88f;
+}
+
+ToolBlock.state-error {
+    border-left: thick #f7768e;
+    background: #23181e;
+}
+
+.tool-header {
+    height: 1;
+    layout: horizontal;
+}
+
+.tool-header:hover {
+    background: #242736;
+}
+
+.tool-args {
+    color: #6b7085;
+    padding-left: 2;
+    height: auto;
+}
+
+.tool-body {
+    height: auto;
+    padding: 0 1 0 2;
+}
+
+.tool-body.hidden {
+    display: none;
+}
+
+.tool-expand-hint {
+    height: 1;
+    color: #5c9cf5;
+    padding-left: 2;
+}
+
+.tool-expand-hint.hidden {
+    display: none;
+}
+
+.tool-expand-hint:hover {
+    text-style: underline;
+}
+
+/* Code & Diff viewers */
+CodeBlock, DiffView {
+    height: auto;
+    background: #121319;
+    border: round #2c2f40;
+    padding: 0 1;
+    margin: 0;
+}
+
+/* Queue Bar (hidden when empty) */
+QueueBar {
+    height: auto;
+    max-height: 4;
+    background: #1d1f2b;
+    border-top: solid #323548;
+    padding: 0 2;
+    color: #e4e6f0;
+}
+
+QueueBar.hidden {
+    display: none;
+}
+
+/* OpenCode-style Bottom Prompt Card (MUST be height: auto) */
+InputArea {
+    height: auto;
+    width: 100%;
+    background: #14151b;
+    padding: 0 2;
+}
+
+#input-card {
+    height: auto;
+    background: #1c1e26;
+    border-left: thick #5c9cf5;
+    padding: 0 1 0 1;
+}
+
+#input-card:focus-within {
+    border-left: thick #fab283;
+}
+
+#input-row {
+    height: auto;
+    layout: horizontal;
+    padding-top: 0;
+}
+
+#prompt-gutter {
+    width: 2;
+    height: 1;
+    color: #fab283;
+    text-style: bold;
+    padding: 0;
+}
+
+#prompt-input {
+    width: 1fr;
+    height: auto;
+    min-height: 1;
+    max-height: 5;
+    background: #1c1e26;
+    border: none;
+    padding: 0;
+    color: #e4e6f0;
+}
+
+#prompt-input:focus {
+    border: none;
+}
+
+#input-meta {
+    height: 1;
+    padding-left: 2;
+    color: #8c91a4;
+}
+
+#input-hint-row {
+    height: 1;
+    layout: horizontal;
+    padding: 0 1;
+}
+
+#input-cwd {
+    width: 1fr;
+    color: #565a6e;
+}
+
+#input-hint {
+    width: auto;
+    color: #565a6e;
+}
+
+/* Interactive / Command Autocomplete Popup */
+#autocomplete-popup {
+    height: auto;
+    max-height: 10;
+    background: #1a1b22;
+    border-top: solid #2c2f40;
+    border-left: thick #5c9cf5;
+    padding: 0;
+    margin: 0;
+}
+
+#autocomplete-popup.hidden {
+    display: none;
+}
+
+/* Single-line Bottom Status Bar */
+StatusBar {
+    height: 1;
+    width: 100%;
+    background: #111218;
+    color: #e4e6f0;
+    layout: horizontal;
+}
+
+.status-help {
+    width: auto;
+    background: #282b3a;
+    color: #c8ccd9;
+    text-style: bold;
+    padding: 0 1;
+}
+
+.status-context {
+    width: auto;
+    padding: 0 1;
+    color: #8c91a4;
+}
+
+.status-state {
+    width: 1fr;
+    padding: 0 1;
+}
+
+.status-model {
+    width: auto;
+    background: #fab283;
+    color: #14151b;
+    text-style: bold;
+    padding: 0 1;
+}
+
+/* OpenCode-style Floating Modals (Commands, Select model, Connect provider) */
+.opencode-modal {
+    width: 66;
+    max-width: 92%;
+    height: auto;
+    max-height: 80%;
+    padding: 1 2;
+    background: #1a1b22;
+    border: solid #2c2f40;
+}
+
+.modal-header {
+    height: 1;
+    layout: horizontal;
+    margin-bottom: 1;
+}
+
+.modal-title {
+    width: 1fr;
+    text-style: bold;
+    color: #e4e6f0;
+}
+
+.modal-esc {
+    width: auto;
+    color: #565a6e;
+}
+
+.modal-search {
+    border: none;
+    background: #1a1b22;
+    color: #e4e6f0;
+    padding: 0;
+    margin-bottom: 1;
+    height: 1;
+}
+
+.modal-search:focus {
+    border: none;
+}
+
+OptionList.opencode-list {
+    height: auto;
+    max-height: 16;
+    border: none;
+    background: #1a1b22;
+    padding: 0;
+}
+
+OptionList.opencode-list > .option-list--option-highlighted,
+OptionList.opencode-list:focus > .option-list--option-highlighted {
+    background: #fab283;
+    color: #141418;
+    text-style: bold;
+}
+
+OptionList.opencode-list > .option-list--option-disabled {
+    color: #bb9af7;
+    text-style: bold;
+    background: #1a1b22;
+}
+
+OptionList.opencode-list > .option-list--option-hover {
+    background: #252734;
+}
+
+.modal-footer-bar {
+    height: 1;
+    margin-top: 1;
+}
+
+.modal-footer-hint {
+    height: 1;
+    margin-top: 1;
+    color: #8c91a4;
+}
+
+.form-label {
+    color: #8c91a4;
+    margin-top: 1;
+}
+
+#connect-form-view.hidden, #connect-list-view.hidden {
+    display: none;
+}
+
+#connect-form-buttons {
+    height: auto;
+    margin-top: 1;
+    align-horizontal: right;
+}
+
+#connect-form-buttons Button {
+    margin-left: 1;
+}
+
+#help-dialog {
+    width: 78;
+    max-width: 92%;
+    height: auto;
+    max-height: 85%;
+    padding: 1 2;
+    background: #1a1b22;
+    border: solid #fab283;
+}
+
+#info-modal-scroll {
+    height: auto;
+    max-height: 16;
+    background: #14151b;
+    padding: 1 1;
+    border-left: thick #5c9cf5;
+}

@@ -1,0 +1,12 @@
+arithmetic: FAIL (0.00, 16945.2 ms, 1313 tokens)
+instruction-following: PASS (1.00, 18236.9 ms, 1297 tokens)
+                        Benchmark Results                         
+┏━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━┓
+┃ Task                  ┃ Status   ┃ Score ┃ Latency    ┃ Tokens ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━┩
+│ arithmetic            │ complete │ 0.00  │ 16945.2 ms │ 1313   │
+│ instruction-following │ complete │ 1.00  │ 18236.9 ms │ 1297   │
+└───────────────────────┴──────────┴───────┴────────────┴────────┘
+Passed: 1/2  Errors: 0  Average latency: 17591.0 ms  Tokens: 2610
+JSON report written to benchmarks/results/ollama-qwen3.5-0.8b.json
+Markdown report written to benchmarks/results/ollama-qwen3.5-0.8b.md

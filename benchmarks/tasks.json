@@ -1,0 +1,22 @@
+{
+  "tasks": [
+    {
+      "id": "arithmetic",
+      "prompt": "What is 17 * 23? Reply with only the number.",
+      "expected": "391",
+      "match": "exact"
+    },
+    {
+      "id": "instruction-following",
+      "prompt": "Reply with exactly the word corvus and nothing else.",
+      "expected": "corvus",
+      "match": "exact"
+    },
+    {
+      "id": "short-reasoning",
+      "prompt": "A box has 3 red balls and 5 blue balls. How many balls are in the box? Reply with only the number.",
+      "expected": "8",
+      "match": "exact"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+/api_k.txt
+*.pem
+*.key
+*.p12
+secrets.json
+/mcp.json
+/mcp-*.json
+
+# Python build and environment artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+corvusenv/
+.uv/
+pip-wheel-metadata/
+
+# Test, type-check, and coverage caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+
+# Runtime data and logs
+/.corvustui/
+/memory/
+/chroma/
+*.jsonl
+
+# Local Bend toolchain checkout (the proof files are committed separately)
+/bend/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Local coursework, scratch files, and agent-generated sample projects
+/app.py
+/biological evolution.txt
+/Win 10 Exploits.txt
+/*.xlsx
+/*.docx
+/create_attendance.py
+/create_report.py
+/math_output.txt
+/python_info.md
+/result*.txt
+/test*.txt
+/tech_news_digest.md
+/tech_news_today.docx
+/youtube_founded.txt
+/corvus_todolist_project/
+/todolist_corvus_test/
