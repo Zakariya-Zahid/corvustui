@@ -143,7 +143,7 @@ Trusted publishing removes long-lived API tokens. Configure it once on PyPI:
    - Repository: `corvustui`
    - Workflow name: `publish.yml`
    - Environment: `pypi`
-3. Add `.github/workflows/publish.yml`:
+3. The repository includes `.github/workflows/publish.yml`. For reference:
 
    ```yaml
    name: Publish to PyPI
