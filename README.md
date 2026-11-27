@@ -1,5 +1,7 @@
 # CorvusTUI
 
+[![CI](https://github.com/Zakariya-Zahid/corvustui/actions/workflows/ci.yml/badge.svg)](https://github.com/Zakariya-Zahid/corvustui/actions/workflows/ci.yml)
+
 **CorvusTUI: An Agentic Terminal Interface for Local and Cloud LLMs**
 
 A high-performance, open-source terminal interface and agentic execution
