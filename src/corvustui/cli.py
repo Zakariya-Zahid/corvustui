@@ -230,7 +230,8 @@ def _mcp_config_path(config_path: str | Path | None) -> Path:
 @click.option("--provider", type=click.Choice([p.value for p in ProviderType]),
               default=lambda: settings.default_provider.value, help="LLM provider")
 @click.option("--model", default=None, help="Model name")
-@click.option("--max-iterations", default=10, help="Max ReAct iterations")
+@click.option("--max-iterations", default=None, type=int,
+              help="Max ReAct iterations (default: unlimited)")
 @click.option("--rag/--no-rag", default=False, help="Enable RAG memory")
 @click.option("--rag-path", type=click.Path(), default=None, help="ChromaDB path")
 @click.option("--yes", "-y", is_flag=True, default=False,
@@ -510,7 +511,7 @@ def tui(ctx):
 async def run_interactive(
     provider: ProviderType,
     model: str | None,
-    max_iterations: int,
+    max_iterations: int | None,
     enable_rag: bool,
     rag_path: Path | None,
     auto_approve: bool = False,
@@ -759,7 +760,8 @@ async def run_interactive(
 @cli.command()
 @click.argument("prompt")
 @click.option("--model", default=None)
-@click.option("--max-iterations", default=None, type=int)
+@click.option("--max-iterations", default=None, type=int,
+              help="Max ReAct iterations (default: unlimited)")
 @click.option("--yes", "-y", is_flag=True, default=None,
               help="Auto-approve tools that modify files or run commands")
 @click.option("--allow-path", "run_allow_paths", multiple=True, type=click.Path(),
@@ -805,9 +807,10 @@ def run(
     if effective_model and model_explicit and not provider_explicit:
         provider_value = detect_provider_from_model(effective_model).value
 
-    max_iterations = max_iterations or parent.params.get(
-        "max_iterations", settings.max_iterations
-    )
+    if max_iterations is None:
+        max_iterations = parent.params.get(
+            "max_iterations", settings.max_iterations
+        )
     rag_path = parent.params.get("rag_path")
 
     parent_yes = parent.params.get("yes", False)
@@ -853,7 +856,7 @@ async def run_single(
     provider: ProviderType,
     model: str | None,
     prompt: str,
-    max_iterations: int,
+    max_iterations: int | None,
     enable_rag: bool = False,
     rag_path: Path | None = None,
     auto_approve: bool = False,

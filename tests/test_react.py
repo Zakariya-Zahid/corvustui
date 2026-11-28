@@ -6,8 +6,9 @@ import asyncio
 
 import pytest
 
+from corvustui.config.settings import get_settings
 from corvustui.providers import MessageRole, ProviderType, ProviderUnavailableError
-from corvustui.react.loop import IterationStatus, ReActLoop
+from corvustui.react.loop import IterationStatus, ReActEvent, ReActLoop
 from corvustui.tools.base import FunctionTool
 from corvustui.tools.registry import ToolRegistry
 from tests.fakes import FakeProvider, text_response, tool_response
@@ -308,6 +309,52 @@ async def test_max_iterations_stops_loop():
     assert result.total_iterations == 2
     assert len(result.steps) == 2
     assert calls == [("echo", "1"), ("echo", "2")]
+
+
+@pytest.mark.asyncio
+async def test_unlimited_iterations_keep_calling_tools(monkeypatch):
+    monkeypatch.setattr(get_settings(), "max_iterations", None)
+    responses = [
+        tool_response(("echo", {"value": str(index)})) for index in range(15)
+    ]
+    responses.append(text_response("finished after many tools"))
+    provider = FakeProvider(responses)
+    registry, calls = make_registry("echo")
+    loop = make_loop(provider, registry, max_iterations=None)
+
+    result = await loop.run("use many tools")
+
+    assert result.status == IterationStatus.COMPLETE
+    assert result.total_iterations == 16
+    assert len(calls) == 15
+    assert result.final_answer == "finished after many tools"
+
+
+@pytest.mark.asyncio
+async def test_response_reset_is_emitted_before_tool_calls():
+    provider = FakeProvider([
+        tool_response(("echo", {"value": "1"})),
+        text_response("done"),
+    ])
+    registry, _ = make_registry("echo")
+    loop = make_loop(provider, registry)
+    events: list[ReActEvent] = []
+
+    await loop.run("use the tool", on_event=events.append)
+
+    kinds = [event.kind for event in events]
+    assert kinds.count("response_reset") == 1
+    assert kinds.index("response_reset") < kinds.index("tool_start")
+
+
+@pytest.mark.asyncio
+async def test_final_answer_strips_react_scaffolding():
+    provider = FakeProvider([text_response("Thought: done\nFinal Answer: The result")])
+    loop = make_loop(provider, ToolRegistry())
+
+    result = await loop.run("answer")
+
+    assert result.final_answer == "The result"
 
 
 @pytest.mark.asyncio

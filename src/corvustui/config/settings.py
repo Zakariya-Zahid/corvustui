@@ -100,7 +100,7 @@ class Settings(BaseSettings):
     summarization_model: str = "qwen3.5:0.8b"
 
     # ReAct loop
-    max_iterations: int = 30
+    max_iterations: int | None = None
     max_tool_retries: int = 3
     tool_timeout: float = 60.0
 
