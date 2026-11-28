@@ -9,9 +9,11 @@ from corvustui.core.agent import AgentConfig, CorvusAgent
 from corvustui.providers import (
     MessageRole,
     ProviderModelNotFoundError,
+    ProviderRateLimitError,
     ProviderType,
 )
-from tests.fakes import FakeProvider, text_response
+from corvustui.react.loop import IterationStatus
+from tests.fakes import FakeProvider, text_response, tool_response
 
 
 def install_provider(monkeypatch, provider):
@@ -234,3 +236,97 @@ def test_register_tool_refreshes_system_prompt(monkeypatch):
 
     agent.register_tool(CustomTool())
     assert "custom_tool" in agent.react_loop.system_prompt
+
+
+@pytest.mark.asyncio
+async def test_run_reinjects_todos_and_completed_work(monkeypatch):
+    provider = install_provider(monkeypatch, FakeProvider([text_response("ok")]))
+    agent = CorvusAgent(AgentConfig(provider_type=ProviderType.OLLAMA, model="fake"))
+    agent.todos.replace_from_arguments(
+        {"todos": [{"content": "Build expense tracker", "status": "in_progress"}]}
+    )
+    agent.work_log.append(
+        "- write_file({\"path\": \"test_web/index.html\"}) [ok] -> created"
+    )
+
+    async with agent:
+        await agent.run("continue")
+
+    system_prompt = provider.calls[0][0].content or ""
+    assert "Current task list" in system_prompt
+    assert "Build expense tracker" in system_prompt
+    assert "Work already completed" in system_prompt
+    assert "test_web/index.html" in system_prompt
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_keeps_partial_work_for_next_prompt(monkeypatch):
+    from corvustui.tools.base import Tool, ToolResult
+
+    class EchoTool(Tool):
+        name = "echo"
+        description = "Echo a value"
+        parameters = {
+            "type": "object",
+            "properties": {"value": {"type": "string"}},
+            "required": ["value"],
+        }
+
+        async def execute(self, value: str = "", **kwargs) -> ToolResult:
+            return ToolResult.ok(f"created {value}")
+
+    class RateLimitedProvider(FakeProvider):
+        def __init__(self, responses, fail_after):
+            super().__init__(responses)
+            self.fail_after = fail_after
+
+        async def complete(self, messages, **kwargs):
+            if len(self.calls) >= self.fail_after:
+                raise ProviderRateLimitError("rate limited", ProviderType.OLLAMA)
+            return await super().complete(messages, **kwargs)
+
+    provider = RateLimitedProvider(
+        [tool_response(("echo", {"value": "test_web/index.html"}))],
+        fail_after=1,
+    )
+    install_provider(monkeypatch, provider)
+    agent = CorvusAgent(AgentConfig(provider_type=ProviderType.OLLAMA, model="fake"))
+    agent.register_tool(EchoTool())
+    agent.todos.replace_from_arguments(
+        {"todos": [{"content": "Build expense tracker", "status": "in_progress"}]}
+    )
+
+    async with agent:
+        result = await agent.run("create the expense tracker")
+        assert result.status == IterationStatus.ERROR
+
+        assert any(
+            "echo" in entry and "created test_web/index.html" in entry
+            for entry in agent.work_log
+        )
+        history = [message.content or "" for message in agent.context.messages]
+        assert "create the expense tracker" in history
+        assert any("Turn interrupted" in text for text in history)
+
+        provider.fail_after = 99
+        await agent.run("create the expense tracker")
+
+    retry_prompt = provider.calls[1][0].content or ""
+    assert "Build expense tracker" in retry_prompt
+    assert "created test_web/index.html" in retry_prompt
+
+
+def test_reset_session_clears_context_tasks_and_work_log(monkeypatch):
+    install_provider(monkeypatch, FakeProvider([]))
+    agent = CorvusAgent(AgentConfig(provider_type=ProviderType.OLLAMA, model="fake"))
+    agent.context.add_user("old")
+    agent.todos.replace_from_arguments(
+        {"todos": [{"content": "Old task", "status": "pending"}]}
+    )
+    agent.work_log.append("- old work")
+
+    agent.reset_session()
+
+    assert agent.context.messages == []
+    assert agent.todos.items == []
+    assert agent.work_log == []

@@ -638,10 +638,14 @@ class CorvusTUIApp(App[None]):
                 self._chat.append_error("Cannot clear context while a turn is running.")
                 return
             if self.agent is not None:
-                self.agent.context.clear()
-                agent_todos = getattr(self.agent, "todos", None)
-                if agent_todos is not None:
-                    agent_todos.clear()
+                reset_session = getattr(self.agent, "reset_session", None)
+                if reset_session is not None:
+                    reset_session()
+                else:
+                    self.agent.context.clear()
+                    agent_todos = getattr(self.agent, "todos", None)
+                    if agent_todos is not None:
+                        agent_todos.clear()
             self._todos.clear()
             self._render_todos()
             self._chat.clear_messages()

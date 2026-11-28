@@ -143,3 +143,68 @@ async def test_todo_write_tool_accepts_items_alias():
 
     assert result.success is True
     assert [item.content for item in store.items] == ["Only task"]
+
+
+def test_identical_reset_plan_keeps_completed_and_active_progress():
+    store = TodoStore()
+    store.replace_from_arguments(
+        {
+            "todos": [
+                {"content": "Create directory", "status": "completed"},
+                {"content": "Write HTML", "status": "in_progress"},
+                {"content": "Write CSS", "status": "pending"},
+            ]
+        }
+    )
+
+    items = store.replace_from_arguments(
+        {
+            "todos": [
+                {"content": "Create directory", "status": "pending"},
+                {"content": "Write HTML", "status": "pending"},
+                {"content": "Write CSS", "status": "pending"},
+            ]
+        }
+    )
+
+    assert items is not None
+    assert [item.status for item in items] == [
+        TodoStatus.COMPLETED,
+        TodoStatus.IN_PROGRESS,
+        TodoStatus.PENDING,
+    ]
+
+
+def test_changed_plan_or_explicit_status_is_not_merged():
+    store = TodoStore()
+    store.replace_from_arguments(
+        {
+            "todos": [
+                {"content": "Create directory", "status": "completed"},
+                {"content": "Write HTML", "status": "in_progress"},
+            ]
+        }
+    )
+
+    store.replace_from_arguments(
+        {
+            "todos": [
+                {"content": "Create directory", "status": "pending"},
+                {"content": "Write JavaScript", "status": "pending"},
+            ]
+        }
+    )
+    assert [item.status for item in store.items] == [
+        TodoStatus.PENDING,
+        TodoStatus.PENDING,
+    ]
+
+    store.replace_from_arguments(
+        {
+            "todos": [
+                {"content": "Create directory", "status": "in_progress"},
+                {"content": "Write JavaScript", "status": "pending"},
+            ]
+        }
+    )
+    assert store.items[0].status == TodoStatus.IN_PROGRESS

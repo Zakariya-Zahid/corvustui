@@ -274,7 +274,10 @@ The TUI provides a scrolling chat log, a live streaming preview, a status bar
 dialogs for side-effecting tools. It supports `/help`, `/clear`, `/stats`,
 `/tools`, `/todos`, `/mcp`, `/safety`, `/models`, `/model <name>`, and `/quit`.
 Multi-step turns show a Claude Code-style task strip and sidebar task list, and
-final answers render as spaced Markdown with colored headings. If the
+final answers render as spaced Markdown with colored headings. Completed tool
+calls are kept in a session work log, so a turn interrupted by a rate limit or
+cancellation resumes from the existing files and task list instead of starting
+over. If the
 configured default Ollama model is missing and several models are installed,
 the TUI starts with the first installed model and lets you switch with
 `/models` or Ctrl+O. Approvals fail closed if the modal cannot be shown.
