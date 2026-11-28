@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any
 
@@ -128,8 +128,34 @@ class TodoStore:
                 )
             )
 
-        self.items = parsed
+        self.items = self._preserve_progress(parsed)
         return list(self.items)
+
+    def _preserve_progress(self, parsed: list[TodoItem]) -> list[TodoItem]:
+        """Keep progress when a model re-emits an identical plan from scratch.
+
+        Models occasionally lose track of a partially finished plan and send
+        the same task list again with every item reset to ``pending``.  Only
+        that wholesale-reset shape is repaired; any deliberate status change or
+        edited task list is accepted as-is.
+        """
+        if not self.items or len(parsed) != len(self.items):
+            return parsed
+        if any(item.status != TodoStatus.PENDING for item in parsed):
+            return parsed
+
+        previous = {item.content: item for item in self.items}
+        if len(previous) != len(self.items):
+            return parsed
+        if any(item.content not in previous for item in parsed):
+            return parsed
+
+        return [
+            replace(item, status=previous[item.content].status)
+            if previous[item.content].status != TodoStatus.PENDING
+            else item
+            for item in parsed
+        ]
 
     def render_plain(self) -> str:
         """Plain-text summary returned to the model as a tool observation."""

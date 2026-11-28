@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Callable
@@ -12,12 +14,50 @@ from corvustui.mcp.config import load_mcp_config
 from corvustui.mcp.manager import MCPManager, MCPServerStatus
 from corvustui.memory.vector import ChromaMemory, InMemoryVectorMemory, VectorMemory
 from corvustui.providers import ProviderFactory, ProviderType
-from corvustui.react.loop import IterationStatus, ReActEvent, ReActLoop, ReActResult
+from corvustui.react.loop import (
+    IterationStatus,
+    ReActEvent,
+    ReActLoop,
+    ReActResult,
+    ReActStep,
+)
 from corvustui.safety import Approver, DenyApprover, SafetyGuard, SafetyPolicy
 from corvustui.todos import TodoStore
 from corvustui.tools.base import Tool
 from corvustui.tools.builtin import register_builtin_tools
 from corvustui.tools.registry import ToolRegistry
+
+# Keep the per-session work log small enough to re-inject every turn without
+# crowding out the actual conversation.
+_MAX_WORK_LOG_ENTRIES = 25
+_MAX_WORK_LOG_ARG_CHARS = 180
+_MAX_WORK_LOG_OBSERVATION_CHARS = 350
+
+
+def _compact(text: str, limit: int) -> str:
+    collapsed = " ".join(text.split())
+    if len(collapsed) <= limit:
+        return collapsed
+    return collapsed[: limit - 3].rstrip() + "..."
+
+
+def _format_work_step(step: ReActStep) -> str | None:
+    """Turn one completed tool step into a compact, replay-safe log line."""
+    if not step.action:
+        return None
+    try:
+        arguments = json.dumps(step.action_input or {}, ensure_ascii=False, default=str)
+    except (TypeError, ValueError):
+        arguments = str(step.action_input or {})
+    outcome = step.observation or step.error or ""
+    failed = bool(step.error) or outcome.startswith(
+        ("Error:", "Tool error:", "Safety blocked:")
+    )
+    status = "error" if failed else "ok"
+    return (
+        f"- {step.action}({_compact(arguments, _MAX_WORK_LOG_ARG_CHARS)}) "
+        f"[{status}] -> {_compact(outcome, _MAX_WORK_LOG_OBSERVATION_CHARS)}"
+    )
 
 
 @dataclass(slots=True)
@@ -66,6 +106,7 @@ class CorvusAgent:
         # Initialize tools
         self.tools = ToolRegistry()
         self.todos = TodoStore()
+        self.work_log: list[str] = []
         register_builtin_tools(self.tools, todo_store=self.todos)
 
         # Initialize safety guard.  The default is deny-by-default for tools
@@ -202,6 +243,51 @@ class CorvusAgent:
         self.tools.register_function(name, description, func, parameters)
         self._refresh_system_prompt()
 
+    def reset_session(self) -> None:
+        """Clear conversation, tasks, and the work log together."""
+        self.context.clear()
+        self.todos.clear()
+        self.work_log.clear()
+
+    def _session_context(self) -> str | None:
+        """Describe the current plan and completed actions for the next turn."""
+        blocks: list[str] = []
+        if self.todos.items:
+            blocks.append(
+                "Current task list (already planned; update it in place instead "
+                "of starting over):\n" + self.todos.render_plain()
+            )
+        if self.work_log:
+            blocks.append(
+                "Work already completed in this session (do not repeat it unless "
+                "verification fails):\n" + "\n".join(self.work_log)
+            )
+        return "\n\n".join(blocks) or None
+
+    def _record_work(self, steps: list[ReActStep]) -> None:
+        for step in steps:
+            entry = _format_work_step(step)
+            if entry:
+                self.work_log.append(entry)
+        if len(self.work_log) > _MAX_WORK_LOG_ENTRIES:
+            self.work_log = self.work_log[-_MAX_WORK_LOG_ENTRIES:]
+
+    def _record_interrupted_turn(self, user_input: str, reason: str) -> None:
+        """Keep a failed turn's progress so the next prompt can resume.
+
+        Provider rate limits and cancellations raise before a ``ReActResult``
+        exists, but the loop has usually completed some tool calls by then.
+        Store those steps plus a short marker instead of dropping the turn.
+        """
+        self._record_work(self.react_loop.steps)
+        self.context.add_user(user_input)
+        detail = f": {reason}" if reason else ""
+        self.context.add_assistant(
+            f"[Turn interrupted before completion{detail}. Completed actions "
+            "are recorded in the session work log; continue from that state "
+            "instead of starting over.]"
+        )
+
     async def run(
         self,
         user_input: str,
@@ -222,9 +308,16 @@ class CorvusAgent:
         # prompt, which the ReAct loop already owns.
         history = self.context.get_history()
 
+        # Re-inject the task list and completed actions every turn.  Without
+        # this, a rate-limited or summarized turn leaves the model with only
+        # the final answer and it starts the same work again.
+        extra_blocks: list[str] = []
+        session_context = self._session_context()
+        if session_context:
+            extra_blocks.append(session_context)
+
         # Relevant memories are passed as extra system context for this run
         # instead of permanently mutating the conversation system message.
-        extra_system = None
         if self.memory:
             top_k = self.config.rag_top_k or self.settings.rag_top_k
             threshold = (
@@ -238,25 +331,48 @@ class CorvusAgent:
                 threshold=threshold,
             )
             if memories:
-                extra_system = "Relevant memories:\n" + "\n\n".join([
-                    f"[Memory {i+1}]: {m.content}" for i, m in enumerate(memories)
-                ])
+                extra_blocks.append(
+                    "Relevant memories:\n"
+                    + "\n\n".join(
+                        f"[Memory {i+1}]: {m.content}"
+                        for i, m in enumerate(memories)
+                    )
+                )
 
         # Run ReAct loop with conversation history and memory context.
         self.react_loop.on_step = on_step
-        result = await self.react_loop.run(
-            user_input,
-            history=history,
-            extra_system=extra_system,
-            on_chunk=on_chunk,
-            on_event=on_event,
-        )
+        try:
+            result = await self.react_loop.run(
+                user_input,
+                history=history,
+                extra_system="\n\n".join(extra_blocks) or None,
+                on_chunk=on_chunk,
+                on_event=on_event,
+            )
+        except asyncio.CancelledError:
+            self._record_interrupted_turn(user_input, "cancelled")
+            raise
+        except Exception as exc:
+            self._record_interrupted_turn(
+                user_input,
+                str(exc) or type(exc).__name__,
+            )
+            raise
 
-        # Store the completed turn. Do not persist tool_calls here: the loop
-        # does not keep the matching tool result messages, and an assistant
-        # message with tool_calls but no tool results is invalid on replay.
+        # Record tool activity as plain text.  A partial turn can leave
+        # unmatched tool calls, so a compact log is safer to replay than a raw
+        # tool transcript and still tells the next turn what already exists.
+        self._record_work(result.steps)
+
         self.context.add_user(user_input)
-        self.context.add_assistant(result.final_answer)
+        if result.status == IterationStatus.COMPLETE:
+            self.context.add_assistant(result.final_answer)
+        else:
+            self.context.add_assistant(
+                f"[Turn interrupted: {result.final_answer}. "
+                "Completed actions are recorded in the session work log; "
+                "continue from that state instead of starting over.]"
+            )
 
         # Check if summarization needed
         await self.context.summarize_if_needed()

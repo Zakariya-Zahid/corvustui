@@ -188,6 +188,7 @@ REPL-specific behaviors:
 - Side-effecting tools prompt for approval interactively.
 - RAG memories are injected per turn and successful interactions are stored.
 - Context is summarized automatically when it approaches the limit.
+- If a provider fails mid-turn (rate limit, timeout, cancellation), completed tool calls are kept in a session work log. The task list and work log are re-injected on the next prompt, so the agent resumes instead of recreating files it already wrote.
 
 ### `corvustui run` — single prompt
 
