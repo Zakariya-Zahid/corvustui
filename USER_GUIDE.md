@@ -154,6 +154,7 @@ corvustui --provider ollama --model qwen3.5:0.8b \
 - `--yes` auto-approves side-effecting tools (shell, file writes, MCP calls).
 - Without `--yes`, non-interactive runs deny side-effecting tools by default.
 - `--no-mcp` skips starting configured MCP servers (faster startup when you don't need them).
+- `--max-iterations` is optional; when omitted, the agent keeps calling tools until it produces a final answer.
 
 ---
 
@@ -176,6 +177,7 @@ The REPL accepts normal prompts plus slash commands:
 | `/clear` | Clear conversation context |
 | `/stats` | Show context tokens and memory statistics |
 | `/tools` | List available tools |
+| `/todos` | Show the agent's task list |
 | `/mcp` | Show MCP server status |
 | `/safety` | Show the active safety policy |
 | `/models` | List live models for the current provider |
@@ -219,7 +221,9 @@ The TUI provides:
 - **Live streaming preview** — shows provider tokens as they arrive
 - Status bar: provider/model, token usage, MCP count, state
 - Modal approval dialogs for side-effecting tools (fails closed if the modal can't show)
-- Slash commands: `/help`, `/clear`, `/stats`, `/tools`, `/mcp`, `/safety`, `/models`, `/model <name>`, `/quit`
+- Slash commands: `/help`, `/clear`, `/stats`, `/tools`, `/todos`, `/mcp`, `/safety`, `/models`, `/model <name>`, `/quit`
+- Claude Code-style task tracking: multi-step turns show a task strip above the prompt and a task list in the sidebar, also available through `/todos`
+- Final answers render as spaced Markdown with colored, left-aligned headings and fenced code blocks
 - Footer bindings: `^l` clear chat, `^p` palette, `^c` quit
 
 **Model fallback:** If the configured default Ollama model is not installed:

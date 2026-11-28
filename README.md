@@ -205,7 +205,8 @@ async def main():
     config = AgentConfig(
         provider_type=ProviderType.OLLAMA,
         model="qwen3.5:0.8b",
-        max_iterations=10,
+        # None means unlimited tool iterations; set an int to cap the loop.
+        max_iterations=None,
         enable_rag=True,
         rag_path="./memory",
     )
@@ -271,7 +272,9 @@ corvustui tui
 The TUI provides a scrolling chat log, a live streaming preview, a status bar
 (provider/model, context tokens, connected MCP servers), and modal approval
 dialogs for side-effecting tools. It supports `/help`, `/clear`, `/stats`,
-`/tools`, `/mcp`, `/safety`, `/models`, `/model <name>`, and `/quit`. If the
+`/tools`, `/todos`, `/mcp`, `/safety`, `/models`, `/model <name>`, and `/quit`.
+Multi-step turns show a Claude Code-style task strip and sidebar task list, and
+final answers render as spaced Markdown with colored headings. If the
 configured default Ollama model is missing and several models are installed,
 the TUI starts with the first installed model and lets you switch with
 `/models` or Ctrl+O. Approvals fail closed if the modal cannot be shown.
