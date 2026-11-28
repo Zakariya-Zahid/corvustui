@@ -36,6 +36,7 @@ class HelpScreen(ModalScreen[None]):
             "  /sidebar               Toggle right workspace sidebar\n"
             "  /stats                 Show token usage and memory stats\n"
             "  /tools /mcp /safety    Inspect tools, MCP servers, and guardrails\n"
+            "  /todos                 Show the agent's task list\n"
             "  /clear                 Clear chat and context\n"
             "  /quit                  Exit CorvusTUI\n\n"
             "Keyboard Shortcuts:\n"

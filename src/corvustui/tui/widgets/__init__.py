@@ -20,6 +20,7 @@ from corvustui.tui.widgets.sidebar import Sidebar
 from corvustui.tui.widgets.spinner import Spinner
 from corvustui.tui.widgets.status_bar import StatusBar
 from corvustui.tui.widgets.thinking_block import ThinkingBlock
+from corvustui.tui.widgets.todo_bar import TodoBar
 from corvustui.tui.widgets.token_meter import TokenMeter
 from corvustui.tui.widgets.tool_block import ToolBlock
 
@@ -45,6 +46,7 @@ __all__ = [
     "Spinner",
     "StatusBar",
     "ThinkingBlock",
+    "TodoBar",
     "TokenMeter",
     "ToolBlock",
     "ToolsModalScreen",

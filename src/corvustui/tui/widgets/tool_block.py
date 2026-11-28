@@ -27,6 +27,7 @@ TOOL_ICONS: dict[str, str] = {
     "shell": "💻",
     "web_search": "🔍",
     "duckduckgo_search": "🦆",
+    "todo_write": "☑",
 }
 
 TOOL_ACTIVE_VERBS: dict[str, str] = {
@@ -37,6 +38,7 @@ TOOL_ACTIVE_VERBS: dict[str, str] = {
     "shell": "Executing command",
     "web_search": "Searching web",
     "duckduckgo_search": "Searching DuckDuckGo",
+    "todo_write": "Updating tasks",
 }
 
 BRAILLE_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]

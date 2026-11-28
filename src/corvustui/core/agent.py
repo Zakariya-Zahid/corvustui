@@ -14,6 +14,7 @@ from corvustui.memory.vector import ChromaMemory, InMemoryVectorMemory, VectorMe
 from corvustui.providers import ProviderFactory, ProviderType
 from corvustui.react.loop import IterationStatus, ReActEvent, ReActLoop, ReActResult
 from corvustui.safety import Approver, DenyApprover, SafetyGuard, SafetyPolicy
+from corvustui.todos import TodoStore
 from corvustui.tools.base import Tool
 from corvustui.tools.builtin import register_builtin_tools
 from corvustui.tools.registry import ToolRegistry
@@ -64,7 +65,8 @@ class CorvusAgent:
 
         # Initialize tools
         self.tools = ToolRegistry()
-        register_builtin_tools(self.tools)
+        self.todos = TodoStore()
+        register_builtin_tools(self.tools, todo_store=self.todos)
 
         # Initialize safety guard.  The default is deny-by-default for tools
         # with side effects when no interactive approver is supplied.

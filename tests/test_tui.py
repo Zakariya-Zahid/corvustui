@@ -9,6 +9,9 @@ import pytest
 
 pytest.importorskip("textual")
 
+from textual.app import App, ComposeResult
+from textual.widgets import Static
+
 from corvustui.core.agent import AgentConfig
 from corvustui.providers import ProviderModelNotFoundError, ProviderType
 from corvustui.react.loop import IterationStatus, ReActEvent, ReActResult, ReActStep
@@ -33,6 +36,7 @@ from corvustui.tui.widgets import (
     SafetyModalScreen,
     Sidebar,
     ThinkingBlock,
+    TodoBar,
     ToolBlock,
     ToolsModalScreen,
 )
@@ -675,3 +679,71 @@ async def test_outside_root_escalation_prompts_and_protects_sensitive_paths(tmp_
     assert decision.allowed is False
     assert decision.rule == "sensitive_path"
     assert seen_requests == []
+
+
+async def test_tui_todo_bar_sidebar_and_modal_track_tasks():
+    agent = FakeAgent()
+    app = CorvusTUIApp(agent=agent)
+
+    async with app.run_test(size=(110, 34)) as pilot:
+        await _wait_for(pilot, lambda: app._agent_ready)
+
+        app._apply_todo_arguments(
+            {
+                "todos": [
+                    {"content": "Inspect code", "status": "completed"},
+                    {
+                        "content": "Implement fix",
+                        "status": "in_progress",
+                        "activeForm": "Implementing fix",
+                    },
+                    {"content": "Run tests", "status": "pending"},
+                ]
+            }
+        )
+        await pilot.pause(0.05)
+
+        bar = app.query_one("#todo-bar", TodoBar)
+        assert bar.display is True
+        sidebar_tasks = app.query_one("#sb-todos", Static)
+        assert "1/3 complete" in str(sidebar_tasks.render())
+
+        app.query_one("#input-area", InputArea).value = "/todos"
+        await pilot.press("enter")
+        await _wait_for(pilot, lambda: isinstance(app.screen, InfoModalScreen))
+        await pilot.press("escape")
+        await pilot.pause(0.03)
+
+        app.query_one("#input-area", InputArea).value = "/clear"
+        await pilot.press("enter")
+        await pilot.pause(0.05)
+        assert bar.display is False
+        assert app._todos.items == []
+
+
+class _MessageBlockApp(App[None]):
+    def compose(self) -> ComposeResult:
+        yield MessageBlock(MessageRole.ASSISTANT, turn_id="turn-1")
+
+
+async def test_message_block_clears_intermediate_text_and_cleans_final_answer():
+    app = _MessageBlockApp()
+
+    async with app.run_test(size=(80, 24)) as pilot:
+        block = app.query_one(MessageBlock)
+        response = block.query_one("#msg-response", Static)
+
+        block.append_response_chunk("intermediate ReAct text")
+        await pilot.pause(0.1)
+        assert block._response_buffer == "intermediate ReAct text"
+        assert response.display is True
+
+        block.clear_response()
+        await pilot.pause(0.01)
+        assert block._response_buffer == ""
+        assert response.display is False
+
+        block.set_final_markdown("Thought: internal\nFinal Answer: **done**")
+        await pilot.pause(0.01)
+        assert block._response_buffer == "**done**"
+        assert response.display is True

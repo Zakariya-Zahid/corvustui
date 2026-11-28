@@ -256,6 +256,16 @@ CodeBlock, DiffView {
     margin: 0;
 }
 
+/* Task strip (hidden when the agent has no plan) */
+TodoBar {
+    height: auto;
+    max-height: 5;
+    background: #171923;
+    border-top: solid #2c2f40;
+    padding: 0 2;
+    color: #e4e6f0;
+}
+
 /* Queue Bar (hidden when empty) */
 QueueBar {
     height: auto;

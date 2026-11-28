@@ -9,6 +9,7 @@ from typing import Any
 from corvustui.react.loop import IterationStatus, ReActEvent, ReActResult, ReActStep
 from corvustui.tui.events import (
     ResponseChunk,
+    ResponseReset,
     StatusChanged,
     ThinkingChunk,
     ThinkingCompleted,
@@ -79,6 +80,9 @@ class TurnController:
                 saw_response_event = True
                 self.app.post_message(ResponseChunk(turn_id, event.data.get("text", "")))
                 self.app.post_message(StatusChanged("streaming", "Streaming..."))
+            elif event.kind == "response_reset":
+                self.app.post_message(ResponseReset(turn_id))
+                self.app.post_message(StatusChanged("thinking", "Thinking..."))
 
         def on_chunk(chunk: str) -> None:
             # Used as fallback when an injected fake agent does not emit ReActEvents

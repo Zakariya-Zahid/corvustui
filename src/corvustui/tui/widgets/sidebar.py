@@ -9,6 +9,8 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.widgets import Static
 
+from corvustui.todos import TodoItem, TodoStatus
+
 
 class Sidebar(Vertical):
     """Collapsible workspace summary panel showing file changes, MCPs, and shortcuts."""
@@ -17,11 +19,15 @@ class Sidebar(Vertical):
         super().__init__(**kwargs)
         self._file_stats: dict[str, tuple[int, int]] = {}
         self._mcp_statuses: list[Any] = []
+        self._todos: list[TodoItem] = []
         self._turn_tokens: int = 0
 
     def compose(self) -> ComposeResult:
         yield Static("⌬ SESSION", classes="sidebar-section-title", markup=False)
         yield Static("Connecting...", id="sb-session", classes="sidebar-item", markup=False)
+
+        yield Static("☑ TASKS", classes="sidebar-section-title", markup=False)
+        yield Static("No tasks yet", id="sb-todos", classes="sidebar-item", markup=False)
 
         yield Static("📂 MODIFIED", classes="sidebar-section-title", markup=False)
         yield Static("None", id="sb-files", classes="sidebar-item", markup=False)
@@ -54,6 +60,41 @@ class Sidebar(Vertical):
             )
         except Exception:
             pass
+
+    def set_todos(self, items: list[TodoItem]) -> None:
+        self._todos = list(items)
+        self._refresh_todos()
+
+    def _refresh_todos(self) -> None:
+        try:
+            widget = self.query_one("#sb-todos", Static)
+        except Exception:
+            return
+        if not self._todos:
+            widget.update("No tasks yet")
+            return
+
+        completed = sum(1 for item in self._todos if item.status == TodoStatus.COMPLETED)
+        total = len(self._todos)
+        rendered = Text()
+        rendered.append(
+            f"{completed}/{total} complete",
+            style="#7fd88f" if completed == total else "#e0af68",
+        )
+        for item in self._todos[:6]:
+            rendered.append("\n")
+            if item.status == TodoStatus.COMPLETED:
+                rendered.append("✓ ", style="#7fd88f")
+                rendered.append(item.content, style="strike #6b7085")
+            elif item.status == TodoStatus.IN_PROGRESS:
+                rendered.append("▸ ", style="bold #e0af68")
+                rendered.append(item.display_text, style="bold #e4e6f0")
+            else:
+                rendered.append("○ ", style="#8c91a4")
+                rendered.append(item.content, style="#8c91a4")
+        if total > 6:
+            rendered.append(f"\n+{total - 6} more", style="dim")
+        widget.update(rendered)
 
     def _refresh_files(self) -> None:
         try:
