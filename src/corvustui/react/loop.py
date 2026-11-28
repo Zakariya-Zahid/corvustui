@@ -13,6 +13,7 @@ from typing import Any, Callable
 from rich.console import Console
 
 from corvustui.config.settings import get_settings
+from corvustui.formatting import clean_final_answer
 from corvustui.providers import (
     BaseProvider,
     CompletionResponse,
@@ -107,7 +108,11 @@ class ReActLoop:
         self.provider = provider
         self.tools = tools
         self.system_prompt = system_prompt or self._default_system_prompt()
-        self.max_iterations = max_iterations or get_settings().max_iterations
+        self.max_iterations = (
+            max_iterations
+            if max_iterations is not None
+            else get_settings().max_iterations
+        )
         self.tool_timeout = tool_timeout or get_settings().tool_timeout
         self.on_step = on_step
         self.guard = guard
@@ -138,13 +143,18 @@ Action Input: {{"param": "value"}}
 Observation: result (provided by the system)
 
 Rules:
-- For simple math/facts/general knowledge: output the answer as plain text, NO tools.
+- For simple math/facts/general knowledge: answer directly, NO tools.
 - For current/specific info you don't know: USE TOOLS.
+- For tasks that need three or more steps, first call `todo_write` with the
+  complete plan. Update the list as you work, keep exactly one item
+  `in_progress`, and mark items `completed` immediately.
 - Use only the exact tool names listed above.
 - Use the exact parameter names from each tool's parameters schema.
-- If a tool fails: try ONE alternative, then answer from knowledge.
+- Use as many tool calls as the task needs; there is no fixed iteration cap.
+- If a tool fails: try an alternative, then answer from your own knowledge.
 - Never write "TOOL_CALL:" or "Action:" in your final answer.
-- The final answer MUST be plain text."""
+- The final answer MUST be clean Markdown: short headings, bullet lists, and
+  fenced code blocks. Do not include Thought/Action/Observation scaffolding."""
 
     async def run(
         self,
@@ -181,7 +191,11 @@ Rules:
 
         consecutive_errors = 0
 
-        for iteration in range(1, self.max_iterations + 1):
+        iteration = 0
+        while True:
+            iteration += 1
+            if self.max_iterations is not None and iteration > self.max_iterations:
+                break
             step = ReActStep(iteration=iteration)
 
             try:
@@ -224,6 +238,8 @@ Rules:
                 content = response.content or ""
 
                 if response.tool_calls:
+                    if on_event is not None:
+                        on_event(ReActEvent("response_reset", iteration=iteration))
                     consecutive_errors = 0
                     names = [tc.name for tc in response.tool_calls]
                     step.thought = getattr(response, "thinking", None) or content or f"Using tools: {', '.join(names)}"
@@ -280,9 +296,7 @@ Rules:
                         thought = response.thinking
 
                     if action is None:
-                        answer = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
-                        if not answer and content.strip():
-                            answer = content.strip()
+                        answer = clean_final_answer(content)
                         if not answer:
                             raise ValueError("Model returned an empty response with no tool call.")
 
@@ -300,11 +314,12 @@ Rules:
                             tool_calls=self.all_tool_calls,
                         )
 
+                    if on_event is not None:
+                        on_event(ReActEvent("response_reset", iteration=iteration))
                     consecutive_errors = 0
                     step.thought = thought
                     step.action = action
                     step.action_input = action_input
-
                     call_id = f"call_{iteration}_{action}"
                     if on_event is not None:
                         on_event(ReActEvent(
@@ -400,14 +415,15 @@ Rules:
                 self.on_step(step)
 
         last_error = self.steps[-1].error if self.steps else None
-        message = f"Maximum iterations ({self.max_iterations}) reached without a final answer."
+        limit = self.max_iterations if self.max_iterations is not None else iteration
+        message = f"Maximum iterations ({limit}) reached without a final answer."
         if last_error:
             message += f" Last error: {last_error}"
 
         return ReActResult(
             final_answer=message,
             steps=self.steps,
-            total_iterations=self.max_iterations,
+            total_iterations=limit,
             status=IterationStatus.MAX_ITERATIONS,
             total_tokens=self.total_tokens,
             tool_calls=self.all_tool_calls,

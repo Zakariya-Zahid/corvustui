@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from rich.text import Text
+from rich.theme import Theme
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -25,6 +26,7 @@ from corvustui.providers import (
 )
 from corvustui.react.loop import ReActLoop
 from corvustui.safety import redact_secrets
+from corvustui.todos import TodoStatus, TodoStore
 from corvustui.tui.approval import TUIApprover
 from corvustui.tui.controllers import (
     MessageQueue,
@@ -36,6 +38,7 @@ from corvustui.tui.controllers import (
 from corvustui.tui.events import (
     QueueUpdated,
     ResponseChunk,
+    ResponseReset,
     StatusChanged,
     ThinkingChunk,
     ThinkingCompleted,
@@ -61,6 +64,7 @@ from corvustui.tui.widgets import (
     SafetyModalScreen,
     Sidebar,
     StatusBar,
+    TodoBar,
     ToolsModalScreen,
 )
 from corvustui.tui.widgets.diff_view import compute_diff_stats
@@ -130,6 +134,7 @@ class CorvusTUIApp(App[None]):
         self._history = PromptHistory()
         self._prefs = TUIPrefs()
         self._queue = MessageQueue(on_change=self._on_queue_changed)
+        self._todos = TodoStore()
         self._turn_controller = TurnController(self)
         self._queue_timer = None
         self._active_parallel_tasks: set[asyncio.Task[Any]] = set()
@@ -141,11 +146,23 @@ class CorvusTUIApp(App[None]):
         with Horizontal(id="workspace"):
             yield ChatView(id="chat-view")
             yield Sidebar(id="sidebar")
+        yield TodoBar(id="todo-bar")
         yield QueueBar(id="queue-bar")
         yield InputArea(history=self._history, id="input-area")
         yield StatusBar(id="status-bar")
 
     def on_mount(self) -> None:
+        self.console.push_theme(Theme({
+            "markdown.code": "bold #e0af68 on #1f2330",
+            "markdown.link": "underline #7dcfff",
+            "markdown.link_url": "dim #5c9cf5",
+            "markdown.item.bullet": "bold #fab283",
+            "markdown.item.number": "bold #fab283",
+            "markdown.block_quote": "italic #8c91a4",
+            "markdown.hr": "#3b3f52",
+            "markdown.table.header": "bold #fab283",
+            "markdown.table.border": "#3b3f52",
+        }))
         self._refresh_top_bar()
         self._queue_timer = self.set_interval(0.25, self._queue_tick)
         self.start_agent()
@@ -184,6 +201,10 @@ class CorvusTUIApp(App[None]):
     def _queue_bar(self) -> QueueBar:
         return self.query_one("#queue-bar", QueueBar)
 
+    @property
+    def _todo_bar(self) -> TodoBar:
+        return self.query_one("#todo-bar", TodoBar)
+
     @staticmethod
     def _short_cwd() -> str:
         return str(Path.cwd()).replace(str(Path.home()), "~")
@@ -217,6 +238,7 @@ class CorvusTUIApp(App[None]):
 
         self._agent_ready = True
         assert self.agent is not None
+        self._sync_todos_from_agent()
         provider = getattr(self.agent.provider, "provider_type", None)
         model = getattr(self.agent.provider, "model", "unknown")
         provider_name = provider.value if provider is not None else "unknown"
@@ -467,6 +489,8 @@ class CorvusTUIApp(App[None]):
             block.complete_thinking(event.iteration, event.full_text)
 
     def on_tool_started(self, event: ToolStarted) -> None:
+        if event.tool_name == "todo_write":
+            self._apply_todo_arguments(event.arguments)
         chat = self._chat_or_none
         if chat is None:
             return
@@ -476,6 +500,8 @@ class CorvusTUIApp(App[None]):
             chat.scroll_if_pinned()
 
     def on_tool_completed(self, event: ToolCompleted) -> None:
+        if event.tool_name == "todo_write":
+            self._sync_todos_from_agent()
         chat = self._chat_or_none
         if chat is None:
             return
@@ -507,7 +533,16 @@ class CorvusTUIApp(App[None]):
             block.append_response_chunk(event.text)
             chat.scroll_if_pinned()
 
+    def on_response_reset(self, event: ResponseReset) -> None:
+        chat = self._chat_or_none
+        if chat is None:
+            return
+        block = chat.get_turn_block(event.turn_id)
+        if block is not None:
+            block.clear_response()
+
     def on_turn_completed(self, event: TurnCompleted) -> None:
+        self._sync_todos_from_agent()
         chat = self._chat_or_none
         if chat is None:
             return
@@ -536,6 +571,28 @@ class CorvusTUIApp(App[None]):
         if not self.is_running:
             return
         self._set_status(event.detail or event.state, state=event.state)
+
+    def _apply_todo_arguments(self, arguments: dict[str, Any]) -> None:
+        if self._todos.replace_from_arguments(arguments) is not None:
+            self._render_todos()
+
+    def _sync_todos_from_agent(self) -> None:
+        store = getattr(self.agent, "todos", None)
+        if store is None:
+            return
+        self._todos.replace(store.items)
+        self._render_todos()
+
+    def _render_todos(self) -> None:
+        items = list(self._todos.items)
+        try:
+            self._todo_bar.update_todos(items)
+        except Exception:
+            pass
+        try:
+            self._sidebar.set_todos(items)
+        except Exception:
+            pass
 
     # -- commands ----------------------------------------------------------
 
@@ -582,8 +639,13 @@ class CorvusTUIApp(App[None]):
                 return
             if self.agent is not None:
                 self.agent.context.clear()
+                agent_todos = getattr(self.agent, "todos", None)
+                if agent_todos is not None:
+                    agent_todos.clear()
+            self._todos.clear()
+            self._render_todos()
             self._chat.clear_messages()
-            self._chat.append_system("Conversation context and chat cleared.")
+            self._chat.append_system("Conversation context, tasks, and chat cleared.")
             self._sync_token_stats()
             return
         if command == "/stats":
@@ -597,6 +659,9 @@ class CorvusTUIApp(App[None]):
             return
         if command == "/safety":
             self._show_safety()
+            return
+        if command == "/todos":
+            self._show_todos()
             return
         if command == "/models":
             if not argument:
@@ -686,6 +751,30 @@ class CorvusTUIApp(App[None]):
             return
         tools = self.agent.tools.get_all()
         self.push_screen(ToolsModalScreen(tools))
+
+    def _show_todos(self) -> None:
+        items = self._todos.items
+        if not items:
+            rows = [
+                ("Tasks", "No tasks yet. Ask the agent to plan a multi-step task.", "dim")
+            ]
+        else:
+            completed, total = self._todos.counts()
+            rows = [
+                (
+                    "Progress",
+                    f"{completed}/{total} complete",
+                    "#7fd88f" if completed == total else "#e0af68",
+                )
+            ]
+            for item in items:
+                if item.status == TodoStatus.COMPLETED:
+                    rows.append(("✓ Completed", item.content, "#7fd88f"))
+                elif item.status == TodoStatus.IN_PROGRESS:
+                    rows.append(("▸ In progress", item.display_text, "bold #e0af68"))
+                else:
+                    rows.append(("○ Pending", item.content, "#8c91a4"))
+        self.push_screen(InfoModalScreen("Tasks", rows))
 
     def _show_mcp(self) -> None:
         statuses = getattr(self.agent, "mcp_statuses", []) if self.agent else []
@@ -875,6 +964,8 @@ class CorvusTUIApp(App[None]):
             await self._show_stats()
         elif cmd_id == "show_tools":
             self._show_tools()
+        elif cmd_id == "show_todos":
+            self._show_todos()
         elif cmd_id == "show_mcp":
             self._show_mcp()
         elif cmd_id == "show_safety":

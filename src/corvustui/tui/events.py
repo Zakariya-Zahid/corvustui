@@ -85,6 +85,14 @@ class ResponseChunk(Message):
         self.text = text
 
 
+class ResponseReset(Message):
+    """Emitted when streamed intermediate text should be discarded."""
+
+    def __init__(self, turn_id: str) -> None:
+        super().__init__()
+        self.turn_id = turn_id
+
+
 class TurnCompleted(Message):
     """Emitted when a turn finishes successfully or reaches max iterations."""
 

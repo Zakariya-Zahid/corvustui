@@ -10,6 +10,7 @@ from typing import Any
 import httpx
 
 from corvustui.config.settings import get_settings
+from corvustui.todos import TodoStore
 from corvustui.tools.base import Tool, ToolResult
 from corvustui.tools.registry import ToolRegistry
 
@@ -502,7 +503,72 @@ class DuckDuckGoSearchTool(Tool):
             return ToolResult.err(f"DuckDuckGo search failed: {e}")
 
 
-def register_builtin_tools(registry: ToolRegistry) -> None:
+class TodoWriteTool(Tool):
+    """Maintain the agent's visible task list for multi-step work."""
+
+    name = "todo_write"
+    description = (
+        "Create or update the task list for a multi-step task. Pass the COMPLETE "
+        "list every time. Keep exactly one task in_progress and mark tasks "
+        "completed immediately after finishing them."
+    )
+    parameters = {
+        "type": "object",
+        "properties": {
+            "todos": {
+                "type": "array",
+                "description": "The complete task list, in order.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "content": {
+                            "type": "string",
+                            "description": "Imperative task description.",
+                        },
+                        "status": {
+                            "type": "string",
+                            "enum": ["pending", "in_progress", "completed"],
+                        },
+                        "activeForm": {
+                            "type": "string",
+                            "description": "Present-continuous label while in progress.",
+                        },
+                    },
+                    "required": ["content", "status"],
+                },
+            }
+        },
+        "required": ["todos"],
+    }
+
+    def __init__(self, store: TodoStore | None = None) -> None:
+        self.store = store or TodoStore()
+
+    async def execute(self, todos: list[dict[str, Any]] | None = None, **kwargs) -> ToolResult:
+        raw = todos
+        if raw is None:
+            raw = kwargs.get("items")
+        if raw is None:
+            raw = kwargs.get("tasks")
+        if raw is None:
+            return ToolResult.err(
+                "todo_write expects a 'todos' array of {content, status} objects."
+            )
+
+        updated = self.store.replace_from_arguments({"todos": raw})
+        if updated is None:
+            return ToolResult.err(
+                "Invalid todo list. Each item needs a non-empty 'content' and a "
+                "'status' of pending, in_progress, or completed."
+            )
+        return ToolResult.ok(self.store.render_plain(), count=len(updated))
+
+
+def register_builtin_tools(
+    registry: ToolRegistry,
+    *,
+    todo_store: TodoStore | None = None,
+) -> None:
     """Register all built-in tools."""
     registry.register(ReadFileTool())
     registry.register(WriteFileTool())
@@ -511,3 +577,4 @@ def register_builtin_tools(registry: ToolRegistry) -> None:
     registry.register(ShellTool())
     registry.register(WebSearchTool())
     registry.register(DuckDuckGoSearchTool())
+    registry.register(TodoWriteTool(todo_store))

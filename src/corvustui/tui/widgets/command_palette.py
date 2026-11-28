@@ -31,6 +31,7 @@ PALETTE_COMMANDS: list[PaletteCommand] = [
     PaletteCommand("toggle_sidebar", "Workspace", "Toggle workspace sidebar", "ctrl+b", "sidebar files"),
     PaletteCommand("show_stats", "Workspace", "Show token & memory stats", "/stats", "tokens context"),
     PaletteCommand("show_tools", "Workspace", "List available tools", "/tools", "tools"),
+    PaletteCommand("show_todos", "Workspace", "Show task list", "/todos", "tasks plan progress"),
     PaletteCommand("show_mcp", "Workspace", "Show MCP server status", "/mcp", "mcp servers"),
     PaletteCommand("show_safety", "Workspace", "Show active safety policy", "/safety", "safety guardrails"),
     PaletteCommand("queue_status", "Queue", "Inspect queued prompts", "/queue", "queue"),

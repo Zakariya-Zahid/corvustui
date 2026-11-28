@@ -6,14 +6,15 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from rich.markdown import Markdown
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widget import Widget
 from textual.widgets import Static
 
+from corvustui.formatting import clean_final_answer
 from corvustui.safety import redact_secrets
+from corvustui.tui.markdown import render_markdown
 from corvustui.tui.widgets.thinking_block import ThinkingBlock
 from corvustui.tui.widgets.tool_block import ToolBlock
 
@@ -185,8 +186,14 @@ class MessageBlock(Widget):
         self._render_scheduled = False
         self._refresh_response()
 
+    def clear_response(self) -> None:
+        """Discard streamed intermediate text before a tool call."""
+        self._response_buffer = ""
+        self._render_scheduled = False
+        self._refresh_response()
+
     def set_final_markdown(self, text: str) -> None:
-        self._response_buffer = text
+        self._response_buffer = clean_final_answer(text)
         self._render_scheduled = False
         self._refresh_response()
 
@@ -203,7 +210,7 @@ class MessageBlock(Widget):
         widget.display = True
         safe = redact_secrets(self._response_buffer)
         try:
-            widget.update(Markdown(safe))
+            widget.update(render_markdown(safe))
         except Exception:
             widget.update(Text(safe))
 

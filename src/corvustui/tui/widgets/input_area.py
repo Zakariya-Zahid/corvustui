@@ -25,6 +25,7 @@ SLASH_COMMANDS: list[tuple[str, str, bool]] = [
     ("/clear", "Clear conversation context & chat", False),
     ("/stats", "Open context, token & memory stats modal", False),
     ("/tools", "Open searchable tools modal", False),
+    ("/todos", "Open the agent's task list", False),
     ("/mcp", "Open MCP server status modal", False),
     ("/safety", "Open active safety policy modal", False),
     ("/help", "Open commands & shortcuts modal", False),
